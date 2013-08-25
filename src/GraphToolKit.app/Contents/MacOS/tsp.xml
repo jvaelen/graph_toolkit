@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+ <key for="all" attr.type="string" attr.name="label" id="label"/>
+ <key for="node" attr.type="float" attr.name="x" id="x"/>
+ <key for="node" attr.type="float" attr.name="y" id="y"/>
+ <key for="node" attr.type="int" attr.name="r" id="r"/>
+ <key for="node" attr.type="int" attr.name="g" id="g"/>
+ <key for="node" attr.type="int" attr.name="b" id="b"/>
+ <graph edgedefault="directed" id="New Graph 1">
+  <node id="0">
+   <data key="label">Node 0</data>
+   <data key="x">-356</data>
+   <data key="y">-128</data>
+   <data key="r">0</data>
+   <data key="g">0</data>
+   <data key="b">0</data>
+  </node>
+  <node id="1">
+   <data key="label">Node 1</data>
+   <data key="x">-131</data>
+   <data key="y">43</data>
+   <data key="r">0</data>
+   <data key="g">0</data>
+   <data key="b">0</data>
+  </node>
+  <node id="2">
+   <data key="label">Node 2</data>
+   <data key="x">-90</data>
+   <data key="y">-113</data>
+   <data key="r">0</data>
+   <data key="g">0</data>
+   <data key="b">0</data>
+  </node>
+  <edge target="1" source="0">
+   <data key="r">0</data>
+   <data key="g">0</data>
+   <data key="b">0</data>
+   <data key="label">2</data>
+  </edge>
+  <edge target="2" source="1">
+   <data key="r">0</data>
+   <data key="g">0</data>
+   <data key="b">0</data>
+   <data key="label">3</data>
+  </edge>
+  <edge target="0" source="2">
+   <data key="r">0</data>
+   <data key="g">0</data>
+   <data key="b">0</data>
+   <data key="label">1</data>
+  </edge>
+ </graph>
+</graphml>

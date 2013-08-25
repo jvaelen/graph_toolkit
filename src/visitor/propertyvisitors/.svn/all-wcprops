@@ -1,0 +1,65 @@
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/11-trpr-gr04/!svn/ver/373/src/GraphToolKit/visitor/propertyvisitors
+END
+cyclevisitor.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/11-trpr-gr04/!svn/ver/292/src/GraphToolKit/visitor/propertyvisitors/cyclevisitor.cpp
+END
+weightedvisitor.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/11-trpr-gr04/!svn/ver/328/src/GraphToolKit/visitor/propertyvisitors/weightedvisitor.cpp
+END
+connectedvisitor.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/11-trpr-gr04/!svn/ver/373/src/GraphToolKit/visitor/propertyvisitors/connectedvisitor.cpp
+END
+cyclevisitor.h
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/11-trpr-gr04/!svn/ver/289/src/GraphToolKit/visitor/propertyvisitors/cyclevisitor.h
+END
+weightedvisitor.h
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/11-trpr-gr04/!svn/ver/328/src/GraphToolKit/visitor/propertyvisitors/weightedvisitor.h
+END
+undirectedvisitor.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/11-trpr-gr04/!svn/ver/265/src/GraphToolKit/visitor/propertyvisitors/undirectedvisitor.cpp
+END
+connectedvisitor.h
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/11-trpr-gr04/!svn/ver/361/src/GraphToolKit/visitor/propertyvisitors/connectedvisitor.h
+END
+completevisitor.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/11-trpr-gr04/!svn/ver/361/src/GraphToolKit/visitor/propertyvisitors/completevisitor.cpp
+END
+undirectedvisitor.h
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/11-trpr-gr04/!svn/ver/275/src/GraphToolKit/visitor/propertyvisitors/undirectedvisitor.h
+END
+completevisitor.h
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/11-trpr-gr04/!svn/ver/361/src/GraphToolKit/visitor/propertyvisitors/completevisitor.h
+END

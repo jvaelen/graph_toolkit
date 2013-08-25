@@ -1,0 +1,100 @@
+/*
+ Author: Jeroen Vaelen
+ Description: A Graph can have an adjacencyList list implementation. In this particular implementation, we have a vector of linked lists
+              of pairs of node pointers and edge pointers: every element of the vector is a linked list of pairs where the first
+              element of the pair is a node pointer, and the second element an edge pointer. The first pair of a list represents
+              an actual node, the following pairs represent nodes that are connected with the actual node. The edge pointers are the edges
+              from our actual node to the node that is the first element of the pair where edge is the second element of the pair.
+              For more clear and detailed information about this implementation we redirect you to our report
+     */
+
+#ifndef LISTGRAPH_H
+#define LISTGRAPH_H
+
+using namespace std;
+#include <iostream>
+
+#include "graph.h"
+
+#include <vector>
+#include <list>
+#include <utility> // for pair
+
+
+
+class ListGraph : public Graph
+{
+    // name shadowing!
+//    using Graph::getOutgoingEdges;
+//    using Graph::getIncomingEdges;
+public:
+    ListGraph() : Graph() {}
+    ListGraph(string name) : Graph(name) {}
+    // given an IntegerMatrix, construct a ListGraph
+    ListGraph(const IntegerMatrix& other);
+    // copy constructor -- also used for other Graph types (MatrixGraph, HybridGraph)
+    ListGraph(const Graph& other);
+    // will also delete edges
+    virtual ~ListGraph() { removeNodes(); }
+
+    // constructs an IntegerMatrix out of the current ListGraph
+    IntegerMatrix getIntegerMatrix() const;
+    // allocate a new node, throw it in the Node vector (check if the label is unique first)
+    void addNode(const Node& other = Node());
+    // remove all nodes and clean structure!
+    void removeNodes();
+    // remove a specific node, this also clears all it's edges - this is public because we need it in the GUI
+    void removeNode(Node* node);
+    // for CMD interface
+    void removeNode(unsigned id);
+    // add an edge between two nodes
+    void addEdge(unsigned sourceID, unsigned targetID, const Label& label);
+    // remove all edges
+    void removeEdges();
+    // remove a specific edge
+    void removeEdge(unsigned sourceID, unsigned targetID, const Label& label);
+    // change the current object so that it is isomorf with other
+    // the difference with the constructor ListGraph(MatrixGraph&) is that the latter creates
+    // a new ListGraph object and the following functions change the current ListGraph object
+    void recreateFrom(const Graph& other);
+    void recreateFrom(const IntegerMatrix& other);
+    // returns a list of a certain node's neighbours
+    list<Node*> getNeighbours(Node* node) const;
+    // return a node's outgoing/incoming edges
+    list<Edge*> getOutgoingEdges(Node* node) const;
+    list<Edge*> getIncomingEdges(Node* node)  const;
+    // an edge is uniquely defined by its source-target-label
+    bool isUniqueEdge(const Edge& edge) const;
+
+    // need to be public because the GUI uses them
+    void addNode(Node *node);
+    void addEdge(const Edge& edge);
+    void removeEdge(Node *source, Node *target, const Label& label);
+
+    // does the directed edge FROM source TO target with Label label exist?
+    bool edgeExists(Node* source, Node* target, const Label& label) const;
+
+    // visitor pattern function
+    void accept(Visitor &v) { v.visit(*this); }
+
+    friend QDebug operator<<(QDebug dbg, const ListGraph& other);
+    friend ostream& operator<<(ostream& dbg, const ListGraph& other);
+
+    string toString() const;
+    string toStringID() const;
+
+
+protected:
+    // structure of the graph! for more info, check description above
+    vector<list<pair<Node*, Edge*> > > _adjacencyList;
+
+    // given a label, give back a pointer to the edge
+    // equal node function was made in super class because it is independent of the implementation (matrix/list)
+    Edge* labelToEdge(const Label& label) const;
+
+
+
+
+};
+
+#endif // LISTGRAPH_H

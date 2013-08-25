@@ -1,0 +1,142 @@
+#include <sstream>
+#include <assert.h>
+
+#include "graph.h"
+#include "graphComp/node.h"
+
+Graph::Graph()
+{
+    _name = "";
+    _numberOfNodes = 0;
+    _numberOfEdges = 0;
+}
+
+Graph::Graph(string name) : _name(name)
+{
+    _numberOfNodes = 0;
+    _numberOfEdges = 0;
+}
+
+Graph::Graph(const IntegerMatrix& integerMatrix)
+{
+    _numberOfNodes = 0;
+    _numberOfEdges = 0;
+    for (unsigned i = 0; i < integerMatrix.getNumberOfNodes(); ++i)
+    {
+        stringstream tempStream;
+        tempStream << i;
+        this->addNode(tempStream.str());
+    }
+}
+
+// copy constructor is needed because we use a vector of Node*, the copyconstructor copies over all
+Graph::Graph(const Graph& other) : Subject()
+{
+    for (unsigned i = 0; i < other.getNumberOfNodes(); ++i)
+        _nodes.push_back(new Node(*(other._nodes[i])));
+    // the rest of the copyconstructor is done in the derived classes
+}
+
+Graph::~Graph()
+{
+    removeNodes();
+    // free nodes, edges are done in deriven classes, those will probabily call removeEdges();
+}
+
+// add a Node to the graph
+void Graph::addNode(string nodeLabel)
+{
+    // delegate the function call to actually add the node
+    addNode(new Node(nodeLabel));
+}
+
+// adds a Node by a pointer to a node
+void Graph::addNode(Node* node)
+{
+    _nodes.push_back(node);
+    ++_numberOfNodes; // adjust counter
+    notifyObservers(); // all addNode operations finish with this one, so notifyObservers() only needs to be here
+}
+
+// removes ALL nodes from this graph
+void Graph::removeNodes()
+{
+    // delete all the nodes we have created, keep deleting the first one untill there are none left
+    while(_nodes.size() > 0)
+    {
+        delete _nodes[_nodes.size() - 1];
+        _nodes.pop_back();
+    }
+    _numberOfNodes = 0; // adjust counter
+    notifyObservers(); // all removeNodes operations finish with this one, so notifyObservers() only needs to be here
+}
+
+// removes a given node identified by a pointer to that node
+void Graph::removeNode(Node* node)
+{
+    delete node;
+    _nodes.erase(_nodes.begin() + nodeToIndex(node));
+    --_numberOfNodes; // adjust counter
+    notifyObservers(); // all removeNode operations finish with this one, so notifyObservers() only needs to be here
+}
+
+void Graph::removeNode(int id)
+{
+    delete _nodes[id];
+    _nodes.erase(_nodes.begin() + id);
+    --_numberOfNodes;
+    notifyObservers();
+}
+
+// removes a node identified by it's label
+void Graph::removeNode(Label label)
+{
+    /* if a node does not exist with that label (labelToNode(label) will return a NULL pointer)
+       this can't be the case because the derived classes throw an exception if this would happen
+       (in case the user would want to remove a node that deos not exist) */
+    assert(labelToNode(label));
+    removeNode(labelToNode(label));
+}
+
+// will return the node with label label
+Node* Graph::labelToNode(Label label) const
+{
+    Node* result = NULL;
+    // search for the node with the same label
+    for (unsigned i = 0; i < this->_nodes.size(); ++i)
+    {
+        result = _nodes.at(i);
+        if (result->getLabel() == label)
+            return result;
+    }
+
+    return NULL;
+}
+
+// returns the index of the node* in the vector of nodes
+int Graph::nodeToIndex(Node *node) const
+{
+    int index = -1;
+    if (!node)
+        return index;
+    for (unsigned i = 0; i < this->_nodes.size(); ++i)
+    {
+        if (_nodes.at(i) == node)
+            return i;
+    }
+    return index;
+}
+
+bool Graph::isUniqueNode(Label label) const
+{
+    // empty labels are by definition unique
+    if (label == Label(""))
+        return true;
+    for (unsigned i = 0; i < _nodes.size(); ++i)
+    {
+        // return true if we find a node with the same label
+        if(_nodes[i]->getLabel() == label)
+            return false;
+    }
+    return true;
+}

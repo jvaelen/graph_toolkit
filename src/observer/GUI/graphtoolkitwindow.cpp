@@ -1,0 +1,793 @@
+#include <assert.h>
+#include <QDesktopWidget>
+#include <QGridLayout>
+#include <QLabel>
+#include <QGroupBox>
+#include <QToolBar>
+#include <QAction>
+#include <QMenu>
+#include <QMenuBar>
+#include <QStatusBar>
+#include <QActionGroup>
+#include <QString>
+#include <QFileDialog>
+#include <QTimer>
+#include <QVBoxLayout>
+#include <QMessageBox>
+#include <QDateTime>
+#include <QTextEdit>
+#include <QImage>
+
+#include "graphtoolkitwindow.h"
+#include "toolswidget.h"
+// this is the subject that GraphToolKitWindow will observe
+#include "graphtoolkit.h"
+#include "visitor/algorithmvisitor.h"
+#include "exception/invalidformatex.h"
+#include "selectionobserverwidget.h"
+#include "tools/selectandmovetool.h"
+#include "propertyobserver/propertyobserver.h"
+#include "settingswindow.h"
+#include "exception/invalidgraph.h"
+
+GraphToolKitWindow::GraphToolKitWindow(QWidget *parent) : QMainWindow(parent)
+{
+    _algorithmRan = 0;
+    _theoryAlgorithmInterval = 400;
+    _tabView = NULL;
+    _toolsMenu = NULL;
+    _algorithmTimer = NULL;
+    // the name of our application
+    _defaultTitle = "Baloen GraphToolKit";
+    // humans count from one
+    newNameCounter = 1;
+    // resize the window to a reasonable size
+    resize(1240, 800);
+    // center the window on the screen, purely cosmetic stuff
+    centerWindow(this);
+
+    // initialize the _mainWidget and it's layout
+    _mainWidget = new QWidget(this);
+    _mainLayout = new QGridLayout(_mainWidget);
+    _theoryRunning = false;
+    // create everything, for readability this is done in helpfunctions
+    createActions();
+    createWidgets();
+    createToolbar();
+    createMenu();
+    createStatusBar();
+    createWindows();
+    setWindowTitle(_defaultTitle);
+    setWindowState(windowState());
+}
+
+
+GraphToolKitWindow::~GraphToolKitWindow()
+{
+    delete _selectionObserverWidget;
+    // stop any timers
+    if (_algorithmTimer)
+    {
+        _algorithmTimer->stop();
+        _algorithmTimer->deleteLater();
+    }
+    // delete actions
+    delete _exitAct;
+    delete _undoAct;
+    // delete the widgets
+    delete _tabView;
+    // delete the menus
+    delete _fileMenu;
+    delete _toolsMenu;
+    delete _helpMenu;
+    delete _preferencesMenu;
+    delete _graphSettingsMenu;
+    delete _tools;
+
+    // last things that have to be cleared
+    delete _mainLayout;
+    delete _mainWidget;
+
+    // delete extra windows that had to be created at startup
+    delete _newGraphWindow;
+    delete _settingsWindow;
+}
+
+void GraphToolKitWindow::stopAlgorithm()
+{
+
+    AlgorithmVisitorPM* pm = _graphToolKit->getAlgorithmVisitorPM();
+    pm->resetAll();
+
+    // if there was any previous timer
+    if(_algorithmTimer || _theoryRunning)
+    {
+        _theoryRunning = false;
+        _algorithmRan = QDateTime::currentMSecsSinceEpoch() - _algorithmRan;
+        statusBar()->showMessage("Algorithm Halted ran " + QString::number(_algorithmRan) + "msecs");
+        _tools->unlockTools();
+        _algorithmTimer->deleteLater();
+        _algorithmTimer = NULL;
+        _graphToolKit->resetGraphDrawingAlgorithms();
+    }
+}
+
+// puts the window on the center of the screen
+void GraphToolKitWindow::centerWindow(QWidget* other)
+{
+    // center the window on the screen
+    QDesktopWidget desktop;
+    other->move(QPoint(desktop.width()/2 - other->width()/2, desktop.height()/2 - other->height() / 2));
+}
+
+void GraphToolKitWindow::createActions()
+{
+    // using icons from http://standards.freedesktop.org/icon-naming-spec/icon-naming-spec-latest.html
+    // new action
+    _newAct = new QAction("New", this);
+    _newAct->setShortcut(QKeySequence::New);
+    _newAct->setIcon(QIcon::fromTheme("document-new"));
+    _newAct->setToolTip("create a new graph");
+
+    // open action
+    _openAct = new QAction("&Open", this);
+    _openAct->setShortcut(QKeySequence::Open);
+    _openAct->setIcon(QIcon::fromTheme("document-open"));
+    _openAct->setToolTip("load a graph from a file");
+
+    // save action, this will save the graph in the last saved format and using the path of the last saved file
+    _saveAct = new QAction("&Save", this);
+    _saveAct->setShortcut(QKeySequence::Save);
+    _saveAct->setIcon(QIcon::fromTheme("document-save"));
+    _saveAct->setToolTip("quick save the graph to a file");
+
+    // saveAs action
+    _saveAsAct = new QAction("Save &As", this);
+    _saveAsAct->setShortcut(QKeySequence::SaveAs);
+    _saveAsAct->setIcon(QIcon::fromTheme("document-save-as"));
+    _saveAsAct->setToolTip("save the graph to a file");
+
+    // eport as image action
+    _exportAsImage = new QAction("&Export As Image", this);
+    _exportAsImage->setToolTip("rasterize and save the grpaph to an image file");
+
+    // close actions
+    _closeAct = new QAction("&Close Graph", this);
+    _closeAct->setShortcut(QKeySequence::Close);
+    _closeAct->setIcon(QIcon::fromTheme("window-close"));
+    _closeAct->setToolTip("close the current graph");
+    // exit action
+    _exitAct = new QAction("&Exit", this);
+    _exitAct->setShortcut(QKeySequence::Quit);
+    _exitAct->setIcon(QIcon::fromTheme("application-exit"));
+    _exitAct->setToolTip("Exit the application");
+
+    // undo action
+    _undoAct = new QAction("&Undo", this);
+    _undoAct->setShortcut(QKeySequence::Undo);
+    _exitAct->setIcon(QIcon::fromTheme("edit-undo"));
+    _undoAct->setToolTip("undo the last action that has been executed on this graph");
+    // algorithm actions
+
+    // settings actions, brings up the settings dialogue
+    _appSettingsAct = new QAction("&Settings", this);
+    _appSettingsAct->setIcon(QIcon::fromTheme("preferences-system"));
+    // about action, brings up the about dialogue
+    _aboutAct = new QAction("&About Baloen GraphToolKit", this);
+    _aboutAct->setIcon(QIcon::fromTheme("help-about"));
+    _aboutAct->setToolTip("Show information about the Baloen GraphToolKit");
+
+    _setDefaultColors = new QAction("&Reset Colors", this);
+    _setDefaultColors->setToolTip("Set the color of all the nodes to the default color");
+    // QActionGroup used to make the three menu items checkable only one at a time
+    _structureGroup = new QActionGroup(this);
+
+    _setListAct   = new QAction("&List Graph", this);
+    _setListAct->setCheckable(true);
+    _setMatrixAct = new QAction("&Matrix Graph", this);
+    _setMatrixAct->setCheckable(true);
+    _setHybridAct = new QAction("&Hybrid Graph", this);
+    _setHybridAct->setCheckable(true);
+
+    _structureGroup->addAction(_setListAct);
+    _structureGroup->addAction(_setMatrixAct);
+    _structureGroup->addAction(_setHybridAct);
+
+    _makeComplete = new QAction("Make Complete", this);
+
+    _stopAlgorithm = new QAction("Stop Running Algorithm", this);
+    _stopAlgorithm->setShortcut(QKeySequence(Qt::Key_Escape));
+    // creates a random graph
+    _randomGraphAct = new QAction("Create Random Graph", this);
+    _randomGraphAct->setShortcut(QKeySequence::Copy);
+    connect(_randomGraphAct, SIGNAL(triggered()), this, SLOT(randomGraph()));
+    // connect slots
+    connect(_exportAsImage, SIGNAL(triggered()), this, SLOT(exportAsImage()));
+    connect(_saveAsAct, SIGNAL(triggered()), this, SLOT(saveGraph()));
+    connect(_exitAct, SIGNAL(triggered()), this, SLOT(close()));
+    connect(_setListAct, SIGNAL(triggered()), this, SLOT(changeFocusGraphType()));
+    connect(_setMatrixAct, SIGNAL(triggered()), this, SLOT(changeFocusGraphType()));
+    connect(_setHybridAct, SIGNAL(triggered()), this, SLOT(changeFocusGraphType()));
+    connect(_openAct, SIGNAL(triggered()), this, SLOT(openGraph()));
+    connect(_undoAct, SIGNAL(triggered()), this, SLOT(undoAction()));
+    // close the graph that has focus and is visible to the user
+    connect(_closeAct, SIGNAL(triggered()), this, SLOT(closeGraph()));
+    connect(_setDefaultColors, SIGNAL(triggered()), this, SLOT(setDefaultColors()));
+    /* using the showNewGraphWindow function because it centers the window
+       and does some assertions, this will prevent problems with invalid pointers etc*/
+    connect(_newAct, SIGNAL(triggered()), this, SLOT(createNewGraph()));
+    connect(_appSettingsAct, SIGNAL(triggered()), this, SLOT(changeSettings()));
+    connect(_makeComplete, SIGNAL(triggered()), this, SLOT(makeGraphComplete()));
+    connect(_stopAlgorithm, SIGNAL(triggered()), this, SLOT(stopAlgorithm()));
+    connect(_aboutAct, SIGNAL(triggered()), this, SLOT(aboutApplication()));
+}
+
+void GraphToolKitWindow::exportAsImage()
+{
+    QString fileName = QFileDialog::getSaveFileName(this, "Export graph to an image file", "", "png (*.png)");
+    if (fileName.size() != 0)
+    {
+        QGraphicsScene* focusGraphDrawingScene = ((GraphDrawingWidget*)_tabView->currentWidget())->getScene();
+        QRectF tempRect = focusGraphDrawingScene->itemsBoundingRect();
+        tempRect.setWidth(tempRect.width() + 8);
+        tempRect.setHeight(tempRect.height() + 8);
+        tempRect.setX(tempRect.x() - 4);
+        tempRect.setY(tempRect.y() - 4);
+
+        focusGraphDrawingScene->setSceneRect(tempRect);
+        tempRect.setWidth(tempRect.width() + 8);
+        tempRect.setHeight(tempRect.height() + 8);
+        qDebug() << tempRect;
+        QImage img(tempRect.width(),tempRect.height(), QImage::Format_ARGB32_Premultiplied);
+        QPainter painter(&img);
+        painter.fillRect(0, 0, tempRect.width(), tempRect.height(), Qt::white);
+        painter.translate(-tempRect.x() + 4, -tempRect.y() + 4 );
+        painter.setRenderHint(QPainter::Antialiasing);
+        focusGraphDrawingScene->render(&painter, tempRect);
+        painter.end();
+        img.save(fileName);
+    }
+}
+
+void GraphToolKitWindow::undoAction()
+{
+    assert(_graphToolKit);
+    _graphToolKit->getToolHandler()->unexecute();
+}
+
+void GraphToolKitWindow::updateAlgorithmActions()
+{
+    // cancel the creation of new actions
+    if (!_graphDrawingAlgorithms.empty())
+        return ;
+
+    // add graph drawing algorithms
+    list<string> graphDrawingAlgoritmNames = _graphToolKit->getGraphDrawingAlgoritmNames();
+    for (list<string>::iterator i = graphDrawingAlgoritmNames.begin(); i != graphDrawingAlgoritmNames.end(); ++i)
+    {
+        _graphDrawingAlgorithms.push_back(new QAction(QString::fromStdString(*i) + " - [normal]", this));
+        _GraphDrawingAlgoritmSubMenu->addAction(_graphDrawingAlgorithms.back());
+        connect(_graphDrawingAlgorithms.back(), SIGNAL(triggered()), this, SLOT(doDrawingNormal()));
+
+        _graphDrawingAlgorithms.push_back(new QAction(QString::fromStdString(*i) + " - [iterative]", this));
+        _GraphDrawingAlgoritmSubMenu->addAction(_graphDrawingAlgorithms.back());
+        connect(_graphDrawingAlgorithms.back(), SIGNAL(triggered()), this, SLOT(startIterativeGraphDrawingAlgorithm()));
+    }
+
+    // add graph theory algorithms
+    list<string> graphTheoryAlgorithmsNames = _graphToolKit->getGraphTheoryAlgorithmNames();
+    for (list<string>::iterator i = graphTheoryAlgorithmsNames.begin(); i != graphTheoryAlgorithmsNames.end(); ++i)
+    {
+        _graphTheoryAlgorithms.push_back(new QAction(QString::fromStdString(*i) + " - [normal]", this));
+        _GraphTheorySubMenu->addAction(_graphTheoryAlgorithms.back());
+        connect(_graphTheoryAlgorithms.back(), SIGNAL(triggered()), this, SLOT(doTheoryNormal()));
+
+        _graphTheoryAlgorithms.push_back(new QAction(QString::fromStdString(*i) + " - [iterative]", this));
+        _GraphTheorySubMenu->addAction(_graphTheoryAlgorithms.back());
+        connect(_graphTheoryAlgorithms.back(), SIGNAL(triggered()), this, SLOT(startIterativeGraphTheoryAlgorithm()));
+    }
+}
+
+void GraphToolKitWindow::randomGraph()
+{
+    assert(_graphToolKit);
+    _graphToolKit->startRandomTest(width() - 150, height() - 250, 0.8, 100);
+}
+
+void GraphToolKitWindow::makeGraphComplete()
+{
+    _graphToolKit->makeComplete(_graphToolKit->getFocusGraph());
+}
+
+void GraphToolKitWindow::createWidgets()
+{
+    _tabView = new QTabWidget(this);
+    _sideBar = new QVBoxLayout();
+    _selectionObserverWidget = new SelectionObserverWidget(this);
+    _propertyObserver = new PropertyObserver(this);
+    _selectionObserverWidget->setFixedWidth(240);
+    _propertyObserver->setFixedWidth(240);
+
+    _mainLayout->addWidget(_tabView, 0, 0);
+    _mainLayout->addLayout(_sideBar, 0, 1);
+
+    _sideBar->addWidget(_selectionObserverWidget, 0, Qt::AlignTop);
+    _sideBar->addWidget(_propertyObserver, 0, Qt::AlignTop);
+    _sideBar->addStretch(0);
+    connect(_tabView, SIGNAL(currentChanged(int)), this, SLOT(setFocusGraph(int)));
+    setCentralWidget(_mainWidget);
+}
+
+void GraphToolKitWindow::createToolbar()
+{
+    _tools = new ToolsWidget(this);
+    _tools->setAllowedAreas(Qt::LeftToolBarArea | Qt::TopToolBarArea);
+    addToolBar(Qt::TopToolBarArea, _tools);
+}
+
+void GraphToolKitWindow::closeGraph()
+{
+    stopAlgorithm();
+    // remove the graph with the current index, calling this function will trigger a notify in the model and cause the view to update (and remove) the GraphDrawingWidgets
+    _graphToolKit->removeGraph(_tabView->currentIndex());
+}
+
+void GraphToolKitWindow::doDrawingNormal()
+{
+    _algorithmRan = QDateTime::currentMSecsSinceEpoch();
+    int algorithm = (int)(_graphDrawingAlgorithms.indexOf(dynamic_cast<QAction*>(sender())));
+    try
+    {
+        _graphToolKit->doDrawingNormal(algorithm/2);
+    }
+    catch (InvalidGraph e)
+    {
+        ExceptionMessageBox(e, this);
+    }
+    stopAlgorithm();
+}
+
+void GraphToolKitWindow::doDrawingIterative()
+{
+    _algorithmRan = QDateTime::currentMSecsSinceEpoch();
+    _tools->lockTools();
+    int algorithm = _lastChosenAlgorithm;
+    try
+    {
+        if((_graphToolKit->doDrawingIterative(algorithm)->isFinished()))
+            stopAlgorithm();
+    }
+    catch (InvalidGraph e)
+    {
+        ExceptionMessageBox(e, this);
+        stopAlgorithm();
+    }
+}
+
+void GraphToolKitWindow::doTheoryNormal()
+{
+    _theoryRunning = true;
+    _algorithmRan = QDateTime::currentMSecsSinceEpoch();
+    _graphToolKit->getToolPM().deselectAll(_graphToolKit->getFocusGraph());
+    int algorithm = (int)(_graphTheoryAlgorithms.indexOf(dynamic_cast<QAction*>(sender())));
+    try
+    {
+        _graphToolKit->doTheoryNormal(algorithm/2);
+        stopAlgorithm();
+    }
+    catch(InvalidGraph e)
+    {
+        ExceptionMessageBox(e, this);
+    }
+}
+
+void GraphToolKitWindow::doTheoryIterative()
+{
+    _algorithmRan = QDateTime::currentMSecsSinceEpoch();
+    _tools->lockTools();
+    int algorithm = _lastChosenAlgorithm;
+    try {
+    if((_graphToolKit->doTheoryIterative(algorithm)->isFinished()))
+        stopAlgorithm();
+    } catch(InvalidGraph e) {
+        ExceptionMessageBox(e, this);
+        stopAlgorithm();
+    }
+}
+
+void GraphToolKitWindow::stopRunningAlgorithm()
+{
+    _tools->unlockTools();
+    // if the timer exists, meaning it is running
+    if (_algorithmTimer)
+        _algorithmTimer->stop();
+}
+
+void GraphToolKitWindow::startIterativeGraphDrawingAlgorithm()
+{
+    // stop algorithm will stop any previous algorithm that might have been running
+    stopAlgorithm();
+    // if there is no timer
+    if (!_algorithmTimer)
+    {
+        _graphToolKit->getToolPM().deselectAll(_graphToolKit->getFocusGraph());
+        _lastChosenAlgorithm = (int)((_graphDrawingAlgorithms.indexOf(dynamic_cast<QAction*>(sender())))/2);
+        _algorithmTimer = new QTimer(this);
+        _algorithmTimer->setInterval(1000/60);
+        connect(_algorithmTimer, SIGNAL(timeout()), this, SLOT(doDrawingIterative()));
+        statusBar()->showMessage("Algorithm Running");
+        _algorithmTimer->start();
+    }
+}
+
+void GraphToolKitWindow::startIterativeGraphTheoryAlgorithm()
+{
+    // if there was any previous timer
+    if (_algorithmTimer)
+    {
+        _algorithmTimer->deleteLater();
+        _algorithmTimer = NULL;
+    }
+    // if there is no timer
+    if (!_algorithmTimer)
+    {
+        _graphToolKit->getToolPM().deselectAll(_graphToolKit->getFocusGraph());
+        _lastChosenAlgorithm = (int)((_graphTheoryAlgorithms.indexOf(dynamic_cast<QAction*>(sender())))/2);
+        _algorithmTimer = new QTimer(this);
+        _algorithmTimer->setInterval(_theoryAlgorithmInterval);
+        connect(_algorithmTimer, SIGNAL(timeout()), this, SLOT(doTheoryIterative()));
+        statusBar()->showMessage("Algorithm Running");
+        _algorithmTimer->start();
+    }
+}
+
+void GraphToolKitWindow::createMenu()
+{
+    // file menu
+    _fileMenu = menuBar()->addMenu("&File");
+    _fileMenu->addAction(_newAct);
+    _fileMenu->addAction(_closeAct);
+    _fileMenu->addSeparator();
+    _fileMenu->addAction(_openAct);
+    _fileMenu->addAction(_saveAct);
+    _fileMenu->addAction(_saveAsAct);
+    _fileMenu->addAction(_exportAsImage);
+    _fileMenu->addSeparator();
+    _fileMenu->addAction(_exitAct);
+    _editMenu = menuBar()->addMenu("&Edit");
+    _editMenu->addAction(_undoAct);
+    _editMenu->addAction(_randomGraphAct);
+    _editMenu->addAction(_makeComplete);
+    _editMenu->addAction(_setDefaultColors);
+    _editMenu->insertSeparator(_randomGraphAct);
+    // graph settings menu
+    _graphSettingsMenu = menuBar()->addMenu(("&Graph Settings"));
+    _graphStructureSubMenu = _graphSettingsMenu->addMenu("Graph &Structure");
+    _graphStructureSubMenu->addAction(_setHybridAct);
+    _graphStructureSubMenu->addAction(_setListAct);
+    _graphStructureSubMenu->addAction(_setMatrixAct);
+    // add the toolsMenu, for now there are no actions
+    _toolsMenu = menuBar()->addMenu("&Tools");
+    // adds the algorithm menu
+    _algorithmMenu = menuBar()->addMenu("&Algorithms");
+
+    _GraphDrawingAlgoritmSubMenu = _algorithmMenu->addMenu("Graph Drawing Algorithms");
+    _GraphTheorySubMenu = _algorithmMenu->addMenu("Graph Theory Algorithms");
+    _algorithmMenu->addAction(_stopAlgorithm);
+    _algorithmMenu->insertSeparator(_stopAlgorithm);
+
+    // preferenecs for the application
+    _preferencesMenu = menuBar()->addMenu("&Preferences");
+    _preferencesMenu->addAction(_appSettingsAct);
+    // standard help menu that can be seen in all applications
+    _helpMenu = menuBar()->addMenu("&Help");
+    _helpMenu->addAction(_aboutAct);
+}
+
+void GraphToolKitWindow::changeFocusGraphType()
+{
+    if (_setListAct->isChecked())
+        _graphToolKit->changeFocusGraphStructure(LIST);
+    else if (_setMatrixAct->isChecked())
+        _graphToolKit->changeFocusGraphStructure(MATRIX);
+    else
+        _graphToolKit->changeFocusGraphStructure(HYBRID);
+}
+
+void GraphToolKitWindow::openGraph()
+{
+    string formats = "All Files (*.*)";
+    vector<string> descriptions = _graphToolKit->getReaderDescriptions();
+    vector<string> extentions   = _graphToolKit->getReaderExtensions();
+    for (unsigned i = descriptions.size() - 1; i > 0; --i)
+        formats += ";;" + descriptions[i] + " (*." + extentions[i] + ")";
+    if (!descriptions.empty())
+        formats += ";;" + descriptions[0] + " (*." + extentions[0] + ")";
+
+    QString fileName = QFileDialog::getOpenFileName(this, "open a graph from a file", "", QString::fromStdString(formats));
+    if (fileName.size() != 0) // if the user has selected a file
+    {
+        try
+        {
+            _graphToolKit->openGraph(fileName.toStdString());
+        }
+        // catch all possible exceptions
+        catch (BaseEx& e)
+        {
+            ExceptionMessageBox(e, this);
+        }
+    }
+}
+
+void GraphToolKitWindow::saveGraph()
+{
+    string formats = "";
+    vector<string> descriptions = _graphToolKit->getWriterDescriptions();
+    vector<string> extentions   = _graphToolKit->getWriterExtensions();
+    for (unsigned i = descriptions.size() - 1; i > 0; --i)
+    {
+        if (i != descriptions.size() - 1)
+            formats += ";;";
+        formats += descriptions[i] + " (*." + extentions[i] + ")";
+    }
+
+    if (!descriptions.empty())
+    {
+        if (descriptions.size() != 1)
+            formats += ";;";
+        formats += descriptions[0] + " (*." + extentions[0] + ")";
+    }
+    QString fileName = QFileDialog::getSaveFileName(this, "save a graph to a file", "", QString::fromStdString(formats));
+    if (fileName.size() != 0)
+        _graphToolKit->saveGraph(fileName.toStdString());
+}
+
+void GraphToolKitWindow::createWindows()
+{
+    // by setting the parent widget, Qt can help with cleaning up and freeing memory
+    _newGraphWindow = new NewGraphWindow(this);
+    _settingsWindow = new SettingsWindow(this);
+}
+
+void GraphToolKitWindow::changeSettings()
+{
+    centerWindow(_settingsWindow);
+    _settingsWindow->show();
+    if (_settingsWindow->exec() == QDialog::Accepted)
+    {
+        GraphDrawingWidget* graphDrawingWidget;
+        for (int i = 0; i < _tabView->count(); ++i)
+        {
+            if ((graphDrawingWidget = dynamic_cast<GraphDrawingWidget*>(_tabView->widget(i))))
+                graphDrawingWidget->setFillColor(_settingsWindow->getFillColor());
+        }
+        _theoryAlgorithmInterval = _settingsWindow->getMsecs();
+    }
+}
+
+void GraphToolKitWindow::createNewGraph()
+{
+    // _newGraphWindow must be created beforehand
+    assert(_newGraphWindow);
+    centerWindow(_newGraphWindow);
+    _newGraphWindow->setDefaultNameCounter(newNameCounter);
+    _newGraphWindow->show();
+    // if the user clicked the create button which is connected with the accept() slot, then we can create the graph
+    if (_newGraphWindow->exec() == QDialog::Accepted)
+    {
+        _graphToolKit->addGraph(_newGraphWindow->getChosenGraphID(), _newGraphWindow->getGraphName().toStdString());
+        // increment the namecounter for the next graph
+        ++newNameCounter;
+    }
+}
+
+void GraphToolKitWindow::setFocusGraph(int index)
+{
+    // only change the focusgraph if it's different from what we see and index != -1 (there are some widgets in the _tabView)
+    if (index != -1 && index != _graphToolKit->getFocusID())
+    {
+        // if we change the graph, first we need to stop any algorithm that is being executed in the mean time
+        stopAlgorithm();
+        _graphToolKit->setFocusGraph(index);
+    }
+}
+
+void GraphToolKitWindow::createStatusBar()
+{
+    statusBar()->showMessage("Ready");
+}
+
+void GraphToolKitWindow::createToolsToolBar()
+{
+    // a toolbar can only be created if the _graphToolKit variable is set, we can get the ToolHandler and do the appropriate stuff
+    assert(_graphToolKit);
+    // handle the tools in the toolbar
+    _tools->init(_graphToolKit->getToolPM().getTools());
+    // selection of the tools, this is the same what the toolbar does
+    _toolsMenu->addActions(_tools->getActions());
+    _graphToolKit->getToolHandler()->unregisterAllObservers();
+    // register the observer to the toolhandler in the GraphToolKit instance
+    _graphToolKit->getToolHandler()->registerObserver(_tools);
+    // tell the observers of the ToolHandler to do an update
+    _graphToolKit->getToolHandler()->notifyObservers();
+    updateAllButtons();
+}
+
+void GraphToolKitWindow::updateGraphViews()
+{
+    // first add all the graphs that have been created since we called addNewGraphs last time
+    addNewGraphs(_graphToolKit->getLastAddedGraphs());
+    // the next thing is to remove the graphs that are in the view but aren't in the model from the view
+    removeOldGraphs(_graphToolKit->getLastRemovedGraphs());
+}
+
+void GraphToolKitWindow::addNewGraphs(vector<Graph*> modelGraphs)
+{
+    // for each new graph we add it to the view, this function will do nothing if the size() is 0
+    for (unsigned i = 0; i < modelGraphs.size(); ++i)
+        addGraphToView(modelGraphs[i]);
+}
+
+void GraphToolKitWindow::removeOldGraphs(vector<Graph*> modelGraphs)
+{
+    bool found;
+    // for each graph in the model that has been removed, we search for the workingraph and remove the view that is linked with that graph
+    for (unsigned i = 0; i < modelGraphs.size(); ++i)
+    {
+        found = false;
+        for (int j = 0; !found && j < _workingGraphs.size(); ++j)
+        {
+            found = modelGraphs[i] == _workingGraphs[j];
+            /* if we have found a graph that is in view but not in the model we remove it from the view,
+                we do this inside the loop so that we don't have to decrement the overincremented indexcounter j*/
+            if (found)
+            {
+                removeGraphFromView(j);
+                // because removeGraphFromView changes the size of workingGraphs, we have to reset the index counter and start again so that we don't skip any items
+                i = 0;
+            }
+        }
+    }
+}
+
+void GraphToolKitWindow::addGraphToView(Graph* graph)
+{
+    // the graph pointer can't be NULL, only caused by programming error
+    assert(graph);
+    // the tabview is used to put the GraphDrawingWidgets in
+    assert(_tabView);
+    // first at it to the vector of working graphs so that we can check later what graphs have been removed and clear the linked GraphDrawingWidgets
+    _workingGraphs.push_back(graph);
+    GraphDrawingWidget* newGraphDrawingWidget = new GraphDrawingWidget(this);
+    // let the graph drawing widget know what toolhandler is used so that it knows on which ToolHandler it should call execute
+    newGraphDrawingWidget->setToolHandler(_graphToolKit->getToolHandler());
+    // register an observer for the graph
+    graph->registerObserver(newGraphDrawingWidget);
+    _tabView->addTab(newGraphDrawingWidget, QString::fromStdString(graph->getName()));
+    // notify the GraphDrawingWidget, it's possible that we have to draw a graph immediatly (this can be the case when we load a graph from a file)
+    newGraphDrawingWidget->notify(graph);
+    newGraphDrawingWidget->setFillColor(_settingsWindow->getFillColor());
+}
+
+void GraphToolKitWindow::removeGraphFromView(int index)
+{
+    assert(index < _workingGraphs.size());
+    // just remove the graph from the _workingGraph, the actual memorymanagement is done in the model
+    _workingGraphs.erase(_workingGraphs.begin() + index);
+    delete _tabView->widget(index);
+}
+
+void GraphToolKitWindow::updateWindowTitle()
+{
+    int focusID = _graphToolKit->getFocusID();
+    if (focusID != -1)
+        setWindowTitle(_defaultTitle + " - " + QString::fromStdString(_graphToolKit->getFocusGraph()->getName()));
+    else
+        setWindowTitle(_defaultTitle);
+}
+
+void GraphToolKitWindow::updateFocusGraph()
+{
+    int focusID = _graphToolKit->getFocusID();
+    if (focusID != -1)
+    {
+        ((GraphDrawingWidget*)(_tabView->widget(focusID)))->notify(_graphToolKit->getFocusGraph());
+        _tabView->setCurrentIndex(focusID);
+    }
+}
+
+void GraphToolKitWindow::updateGraphStructureMenu()
+{
+    switch (_graphToolKit->getFocusGraphType())
+    {
+    case HYBRID:
+        _setHybridAct->setChecked(true);
+        break;
+    case LIST:
+        _setListAct->setChecked(true);
+        break;
+    case MATRIX:
+        _setMatrixAct->setChecked(true);
+        break;
+    default:
+        _setHybridAct->setChecked(false);
+        _setMatrixAct->setChecked(false);
+        _setListAct->setChecked(false);
+        break;
+    }
+}
+
+void GraphToolKitWindow::updateAllButtons()
+{
+    // if there are some graphs that are being worked on
+    bool hasGraphs = !_workingGraphs.empty();
+    _editMenu->setEnabled(hasGraphs);
+    _closeAct->setEnabled(hasGraphs);
+    _tools->setEnabled(hasGraphs);
+    _exportAsImage->setEnabled(hasGraphs);
+    _graphSettingsMenu->setEnabled(hasGraphs);
+    _toolsMenu->setEnabled(hasGraphs);
+    _saveAct->setEnabled(hasGraphs);
+    _saveAsAct->setEnabled(hasGraphs);
+    _algorithmMenu->setEnabled(hasGraphs);
+    _propertyObserver->setEnabled(hasGraphs);
+}
+
+void GraphToolKitWindow::setDefaultColors()
+{
+    // set the default colors for the edges
+    const vector<Node*>& nodes = _graphToolKit->getFocusGraph()->getNodes();
+    list<Edge*> outgoingEdges;
+    for (unsigned i = 0; i < nodes.size(); ++i)
+    {
+        nodes[i]->setColor(RGB::colorDefault());
+        outgoingEdges = _graphToolKit->getFocusGraph()->getOutgoingEdges(nodes[i]);
+        for (list<Edge*>::iterator j = outgoingEdges.begin(); j != outgoingEdges.end(); ++j)
+            (*j)->setColor(RGB::colorDefault());
+    }
+}
+
+void GraphToolKitWindow::linkSelectionTool()
+{
+    // if the _nodePropertyWidget is already observing something, cancel this function
+    if (_selectionObserverWidget->hasSubject())
+        return ;
+    SelectAndMoveTool* selectAndMoveInstance = dynamic_cast<SelectAndMoveTool*>(_graphToolKit->getToolPM().getTool(SELECTTOOL));
+    selectAndMoveInstance->registerObserver(_selectionObserverWidget);
+}
+
+void GraphToolKitWindow::linkPropertyObsever()
+{
+    _propertyObserver->initPropertyObserver(*(_graphToolKit->getPropertyVisitorPM()));
+}
+
+void GraphToolKitWindow::aboutApplication()
+{
+    QMessageBox::about(this, "About Baloen Graph Tookit", "This application was created by Balazs Nemeth and Jeroen Vaelen\nA very special thanks to Jonny Daenen for all the help");
+}
+
+void GraphToolKitWindow::notify(Subject *subject)
+{
+    // if the subject changed, we need to update some GUI elements, this happens at least once
+    if (_graphToolKit != subject)
+    {
+        // update the subject to be observed
+        _graphToolKit = (GraphToolKit*)subject;
+        // creates the actions that are linked with the actions for execuuting algorithms, this only happens if there are no actions created uptill now
+        updateAlgorithmActions();
+        createToolsToolBar();
+        // link observer of selectiontool
+        linkSelectionTool();
+        // link observers for the properties
+        linkPropertyObsever();
+    }
+    // the observer will be notified when the user creates a new graph and thus new observers have to be linked and such, this is done in updateGraphViews
+    updateGraphViews();
+    // the graph with focus is the one that the user should see
+    updateFocusGraph();
+    // update the gui around the focusgraph
+    updateWindowTitle();
+    // update the structure submenu
+    updateGraphStructureMenu();
+    updateAllButtons();
+}

@@ -1,0 +1,71 @@
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/11-trpr-gr04/!svn/ver/370/src/GraphToolKit/graph
+END
+.directory
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/11-trpr-gr04/!svn/ver/21/src/GraphToolKit/graph/.directory
+END
+graph.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/11-trpr-gr04/!svn/ver/345/src/GraphToolKit/graph/graph.cpp
+END
+integermatrix.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/svn/11-trpr-gr04/!svn/ver/370/src/GraphToolKit/graph/integermatrix.cpp
+END
+listgraph.h
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/11-trpr-gr04/!svn/ver/345/src/GraphToolKit/graph/listgraph.h
+END
+hybridgraph.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/11-trpr-gr04/!svn/ver/345/src/GraphToolKit/graph/hybridgraph.cpp
+END
+graph.h
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/11-trpr-gr04/!svn/ver/345/src/GraphToolKit/graph/graph.h
+END
+matrixgraph.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/11-trpr-gr04/!svn/ver/346/src/GraphToolKit/graph/matrixgraph.cpp
+END
+integermatrix.h
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/11-trpr-gr04/!svn/ver/370/src/GraphToolKit/graph/integermatrix.h
+END
+hybridgraph.h
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/11-trpr-gr04/!svn/ver/345/src/GraphToolKit/graph/hybridgraph.h
+END
+matrixgraph.h
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/11-trpr-gr04/!svn/ver/345/src/GraphToolKit/graph/matrixgraph.h
+END
+listgraph.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/11-trpr-gr04/!svn/ver/346/src/GraphToolKit/graph/listgraph.cpp
+END

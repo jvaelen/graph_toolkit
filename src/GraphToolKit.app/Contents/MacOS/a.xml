@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+ <key for="all" attr.type="string" attr.name="label" id="label"/>
+ <key for="node" attr.type="float" attr.name="x" id="x"/>
+ <key for="node" attr.type="float" attr.name="y" id="y"/>
+ <key for="node" attr.type="int" attr.name="r" id="r"/>
+ <key for="node" attr.type="int" attr.name="g" id="g"/>
+ <key for="node" attr.type="int" attr.name="b" id="b"/>
+ <graph edgedefault="directed" id="New Graph 1">
+  <node id="0">
+   <data key="label">a</data>
+   <data key="x">-337</data>
+   <data key="y">13</data>
+   <data key="r">0</data>
+   <data key="g">0</data>
+   <data key="b">0</data>
+  </node>
+ </graph>
+</graphml>

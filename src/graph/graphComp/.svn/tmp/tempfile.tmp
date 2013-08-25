@@ -1,0 +1,45 @@
+/*
+ Author: Jeroen Vaelen and Balazs Nemeth
+ Description: An edge knows the source and target node. These are saved as pointers which are by definition of an edge never NULL
+     */
+
+#ifndef EDGE_H
+#define EDGE_H
+
+#include "label.h"
+
+#include <QDebug>
+#include "observer/subject.h"
+
+// onyl pointers to nodes are used
+class Node;
+
+class Edge : public Subject
+{
+public:
+    Edge(Node* source, Node* target);
+    Edge(Node* source, Node* target, Label label);
+    // destructor sets _willBeDeleted and notifies the observers telling them that the object will be deleted
+    ~Edge();
+    const Label& getLabel() const { return _label; }
+    void setLabel(Label label) { _label = label; }
+    void setTarget(Node* target);
+    void setSource(Node* source);
+    Node* getSource() const {return _source;}
+    Node* getTarget() const {return _target;}
+    // this makes it possible to tell the observers that the object will be deleted right before deletion
+    bool getWillBeDeleted() const {return _willBeDeleted;}
+    // returns true if the edge that needs to be checked would be the same if it were seen as if were undirected
+    bool isUndirected(Edge* edge);
+    // friends
+    friend QDebug operator<<(QDebug dbg, const Edge& other);
+
+private:
+    bool _willBeDeleted;
+    // every edge has a label
+    Label _label;
+    Node* _source;
+    Node* _target;
+};
+
+#endif // EDGE_H

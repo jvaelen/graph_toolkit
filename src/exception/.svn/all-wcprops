@@ -1,0 +1,101 @@
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/11-trpr-gr04/!svn/ver/362/src/GraphToolKit/exception
+END
+unexistingnodeex.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/11-trpr-gr04/!svn/ver/92/src/GraphToolKit/exception/unexistingnodeex.cpp
+END
+invalidformatex.h
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/11-trpr-gr04/!svn/ver/343/src/GraphToolKit/exception/invalidformatex.h
+END
+fileioex.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svn/11-trpr-gr04/!svn/ver/286/src/GraphToolKit/exception/fileioex.cpp
+END
+unexistingnodeex.h
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/11-trpr-gr04/!svn/ver/286/src/GraphToolKit/exception/unexistingnodeex.h
+END
+baseex.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/11-trpr-gr04/!svn/ver/286/src/GraphToolKit/exception/baseex.cpp
+END
+invalidgraph.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/11-trpr-gr04/!svn/ver/328/src/GraphToolKit/exception/invalidgraph.cpp
+END
+uniquenodeex.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/11-trpr-gr04/!svn/ver/78/src/GraphToolKit/exception/uniquenodeex.cpp
+END
+fileioex.h
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/11-trpr-gr04/!svn/ver/286/src/GraphToolKit/exception/fileioex.h
+END
+baseex.h
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/11-trpr-gr04/!svn/ver/286/src/GraphToolKit/exception/baseex.h
+END
+invalidgraph.h
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/11-trpr-gr04/!svn/ver/362/src/GraphToolKit/exception/invalidgraph.h
+END
+uniquenodeex.h
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/11-trpr-gr04/!svn/ver/286/src/GraphToolKit/exception/uniquenodeex.h
+END
+unexistingedgeex.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/11-trpr-gr04/!svn/ver/327/src/GraphToolKit/exception/unexistingedgeex.cpp
+END
+unexistingedgeex.h
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/11-trpr-gr04/!svn/ver/286/src/GraphToolKit/exception/unexistingedgeex.h
+END
+uniqueedgeex.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/11-trpr-gr04/!svn/ver/78/src/GraphToolKit/exception/uniqueedgeex.cpp
+END
+invalidformatex.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/11-trpr-gr04/!svn/ver/343/src/GraphToolKit/exception/invalidformatex.cpp
+END
+uniqueedgeex.h
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/11-trpr-gr04/!svn/ver/286/src/GraphToolKit/exception/uniqueedgeex.h
+END

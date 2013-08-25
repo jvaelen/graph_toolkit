@@ -1,0 +1,41 @@
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/11-trpr-gr04/!svn/ver/452/src/GraphToolKit/visitor/graphdrawingvisitors
+END
+standardlayoutvisitor.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/11-trpr-gr04/!svn/ver/452/src/GraphToolKit/visitor/graphdrawingvisitors/standardlayoutvisitor.cpp
+END
+barycentricdrawer.h
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/11-trpr-gr04/!svn/ver/357/src/GraphToolKit/visitor/graphdrawingvisitors/barycentricdrawer.h
+END
+forcedirectedvisitor.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/11-trpr-gr04/!svn/ver/452/src/GraphToolKit/visitor/graphdrawingvisitors/forcedirectedvisitor.cpp
+END
+standardlayoutvisitor.h
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/11-trpr-gr04/!svn/ver/353/src/GraphToolKit/visitor/graphdrawingvisitors/standardlayoutvisitor.h
+END
+forcedirectedvisitor.h
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/11-trpr-gr04/!svn/ver/353/src/GraphToolKit/visitor/graphdrawingvisitors/forcedirectedvisitor.h
+END
+barycentricdrawer.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/11-trpr-gr04/!svn/ver/452/src/GraphToolKit/visitor/graphdrawingvisitors/barycentricdrawer.cpp
+END

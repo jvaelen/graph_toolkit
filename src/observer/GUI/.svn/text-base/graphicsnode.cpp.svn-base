@@ -1,0 +1,176 @@
+#include <QPainter>
+#include <QDebug>
+#include <QGraphicsBlurEffect>
+#include <assert.h>
+#include <QTimeLine>
+#include <QGraphicsItemAnimation>
+#include "graphicsnode.h"
+#include "graph/graphComp/node.h"
+#include "observer/GUI/graphdrawingscene.h"
+#include "tools/toolhandler.h"
+
+GraphicsNode::GraphicsNode(QGraphicsItem* parent, QGraphicsScene* scene, int radius) : QGraphicsItem(parent, scene)
+{
+    _fillColor = RGB::colorWhite();
+    _overrideColor = false;
+    _radius = radius;
+    _toolHandler = NULL;
+    _circle = new QGraphicsEllipseItem(_radius/-2, _radius/-2, _radius*2, _radius*2);
+    _circle->setBrush( Qt::black );
+    setZValue(1);
+    setPen(createPen());
+    setAcceptsHoverEvents(true);
+    // position is set using the baseclass setPos()_graphDrawingScene->addRect(0, 0, this->width(), this->height());;
+}
+
+void GraphicsNode::setFillColor(const RGB& rgb)
+{
+    _fillColor = rgb;
+    sceneUpdateMinimalRect();
+}
+
+QPen GraphicsNode::createPen() const
+{
+    QPen pen;
+    pen.setWidth(2);
+    if (_overrideColor && _node->getColor() != RGB::colorSelection())
+        pen.setBrush(_overriddenColor);
+    else
+        pen.setBrush(_color);
+    return pen;
+}
+
+void GraphicsNode::setColor(const RGB &rgb)
+{
+    setZValue(2);
+    _overriddenColor.setRgb(rgb.getRed(), rgb.getGreen(), rgb.getBlue());
+    _overrideColor = true;
+    sceneUpdateMinimalRect();
+}
+
+void GraphicsNode::unSetColor()
+{
+    setZValue(1);
+    _overrideColor = false;
+    sceneUpdateMinimalRect();
+}
+
+void GraphicsNode::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
+{
+    Q_UNUSED(event);
+    if(!_toolHandler)
+        return ;
+    switch(_toolHandler->getToolType())
+    {
+    case SELECTTOOL:
+        setColor(RGB::colorHoverSelection());
+        break;
+    case REMOVENODETOOL:
+        setColor(RGB::colorDelete());
+        dynamic_cast<GraphDrawingScene*>(scene())->setDeleteStyleEdges(_node);
+        break;
+    default: // all the rest of the tools don't do anything
+        ;
+    }
+    sceneUpdateMinimalRect();
+}
+
+void GraphicsNode::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
+{
+    Q_UNUSED(event);
+    switch(_toolHandler->getToolType())
+    {
+    case SELECTTOOL:
+    case REMOVENODETOOL:
+        unSetColor();
+        dynamic_cast<GraphDrawingScene*>(scene())->setNormalStyleEdges(_node);
+        break;
+    default: // all the rest of the tools don't do anything
+        ;
+    }
+    sceneUpdateMinimalRect();
+}
+
+void GraphicsNode::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
+    Q_UNUSED(option);
+    Q_UNUSED(widget);
+
+    painter->setPen(createPen());
+    painter->setBrush(QColor(_fillColor.getRed(), _fillColor.getGreen(), _fillColor.getBlue()));
+    painter->drawEllipse(-_radius, -_radius, _radius*2, _radius*2);
+    painter->drawText(- (_radius-10), - (_radius-10), _radius + 10, _radius + 10, Qt::AlignCenter | Qt::AlignHCenter | Qt::TextWordWrap, _nodeLabel);
+}
+
+void GraphicsNode::updatePosition(const Point& newPosition)
+{
+    assert(_node);
+    // set the new position for the node, this will call notify observers and this observer will change it's position
+    _node->setCoords(newPosition);
+}
+
+void GraphicsNode::sceneUpdateMinimalRect()
+{
+    assert(scene());
+        scene()->update(QRectF(pos().x() - boundingRect().width()/2, pos().y() - boundingRect().height()/2, boundingRect().width(), boundingRect().height()));
+}
+
+QRectF GraphicsNode::boundingRect() const
+{
+    return QRectF(-_radius, -_radius, _radius*2, _radius*2);
+}
+
+QPainterPath GraphicsNode::shape() const
+{
+    QPainterPath path;
+    path.addEllipse(boundingRect());
+    return path;
+}
+
+GraphicsNode::~GraphicsNode()
+{
+    delete _circle;
+}
+
+void GraphicsNode::notify(Subject *subject)
+{
+    // scene must be set
+    assert(scene());
+    if (_node != subject)
+    {
+        dynamic_cast<GraphDrawingScene*>(scene())->removeFromMap(_node);
+        _node = (Node*)subject;
+        /* if the subject changed (this can happen when the underlying node
+           is swapped for another node, or the first time this observer is linked with a node),
+           all the cashed data can be disregarded */
+        dynamic_cast<GraphDrawingScene*>(scene())->uncashEdges();
+        dynamic_cast<GraphDrawingScene*>(scene())->addToMap(_node, this);
+    }
+
+    // if the subject is deleted, tell the scene that this observer should be removed at the next update
+    if(_node->getWillBeDeleted())
+    {
+        _node->unregisterObserver(this);
+        dynamic_cast<GraphDrawingScene*>(scene())->deleteMeAtNextUpdate(this);
+        return ;
+    }
+
+    _nodeLabel = QString::fromStdString(_node->getLabel().getLabelString());
+    Point newCoords = _node->getCoords();
+    if (Point(pos().x(), pos().y()) != newCoords)
+    {
+        sceneUpdateMinimalRect();
+        // schedule an update where the node was before the coords changed
+        setPos(QPointF(_node->getCoords().getX(), _node->getCoords().getY()));
+        dynamic_cast<GraphDrawingScene*>(scene())->updateEdgesOfNode(_node);
+        dynamic_cast<GraphDrawingScene*>(scene())->expandSceneRect(QPoint(newCoords.getX(), newCoords.getY()));
+    }
+    if (_node->getColor() == RGB::colorSelection())
+        setZValue(2);
+    else
+        setZValue(1);
+    _color.setRgb(_node->getColor().getRed(), _node->getColor().getGreen(), _node->getColor().getBlue());
+    // tell the scene to schedule a at the new postiion
+    sceneUpdateMinimalRect();
+    dynamic_cast<GraphDrawingScene*>(scene())->updateEdgesOfNode(_node);
+}

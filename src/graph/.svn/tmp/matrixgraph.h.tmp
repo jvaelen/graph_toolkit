@@ -1,0 +1,107 @@
+/*
+ Author: Balazs Nemeth
+ Description: implements an adjacency matrix
+     */
+
+#ifndef MATRIXGRAPH_H
+#define MATRIXGRAPH_H
+
+#include <QDebug>
+#include <list>
+#include <vector>
+
+#include "graph.h"
+#include "iterator/breadthfirstsearchiterator.h"
+#include "iterator/depthfirstsearchiterator.h"
+
+using namespace std;
+/* adjacency matrix looks like this:
+
+                target
+            +---+---+---+
+            |   |   |   |
+            +---+---+---+
+   source   |   |   |   |
+            +---+---+---+
+            |   | x |   |
+            +---+---+---+
+
+            x means that there is a edge from source index 2 tot target index 1
+            */
+
+
+class MatrixGraph : public Graph
+{
+public:
+    MatrixGraph();
+    // copies a MatrixGraph. creates the nodes from the other matrixGraph that is passed
+    MatrixGraph(const MatrixGraph& other);
+    // create a MatrixGraph from a ListGraph
+    MatrixGraph(const ListGraph& other);
+    // create a MatrixGrgaph using a graphtuple. The vectors are created by the superclass
+    MatrixGraph(const IntegerMatrix& integerMatrix);
+    // creates an empty MatrixGraph with a name, the baseclass handles this
+    MatrixGraph(string name) : Graph(name) {}
+    // clean up
+    ~MatrixGraph();
+    // returns this graph in the form of a graphTuple
+    IntegerMatrix getIntegerMatrix() const;
+    // adds a node to the graph without any edges connecting to this node. Note that after calling this function the graph is disconnected
+    void addNode(string nodeLabel = "");
+    // removes all nodes from the graph, including the edges that start or end here. Afcter calling this function the graph is empty because there can be no edges without nodes
+    void removeNodes();
+    // use the baseclass removeNode to remove the actual node after cleaning up the structure in the derived class (the MatrixGraph)
+    void removeNode(Label label);
+    void removeEdges();
+    void removeEdge(Label labelString);
+    void removeEdge(Label source, Label target, Label label);
+    // removes the first edge between from and target
+    void removeEdge(Node * source, Node * target, Label label);
+    // same as copyconstructor
+    void recreateFrom(const MatrixGraph& other);
+    // clears the graph and creates one from a ListGraph
+    void recreateFrom(const ListGraph& other);
+    // returns the neighbours of node, an alternative version of this function is availible in the baseclass that calls this function
+    vector<Node*> getNeighbours(Node* node) const;
+    vector<Edge*> getOutgoingEdges(Node* node) const;
+    vector<Edge*> getIncomingEdges(Node* node)  const;
+    void accept(Visitor& v) {v.visit(*this);}
+    // use labels to create edges, calls the function from the baseclass after checking if the labels are valid
+    void addEdge(Label source, Label target, Label label);
+    // iterators
+    // this iterator can be used to iterate through the graph in a breath first search manner
+    BreadthFirstSearchIterator getBreadthFirstSearchIterator() const;
+    // this iterator can be used to iterate through the graph in a depth first search manner
+    DepthFirstSearchIterator getDepthFirstSearchIterator() const;
+
+    //friends
+
+    friend QDebug operator<<(QDebug dbg, const MatrixGraph& other);
+    friend ostream& operator<<(ostream& dbg, const MatrixGraph& other);
+
+
+    // for CMD interface
+    void print() const;
+
+protected:
+    Edge* labelToEdge(Label label) const;
+    bool isUniqueEdge(Edge edge) const;
+private:
+    // see the base class for comments
+    void addNode(Node* node);
+    // delets ALL the edges between 2 nodes, this will also take care of memory management
+    void deleteEdgesBetweenNodes(int i, int j);
+    // helpfunction that extends the matrix by n
+    void extendMatrix(int n = 1);
+    /* helpfunction that removes one colomn and one row from the matrix given by the index.
+       retractMatrix will only change the matrix strucurally. In other words edges wont be deleted*/
+    void retractMatrix(int index);
+    // adds an edge with a label between
+    void addEdge(Node* source, Node * target, Label label = string(""));
+    // removes a node including the edges(!) that are connected to this node
+    void removeNode(Node* node);
+private:
+    vector<vector<list<Edge*> > > _matrix;
+};
+
+#endif // MATRIXGRAPH_H

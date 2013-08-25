@@ -1,0 +1,41 @@
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/11-trpr-gr04/!svn/ver/446/src/GraphToolKit/fileIO
+END
+formatprototypemanager.h
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/11-trpr-gr04/!svn/ver/343/src/GraphToolKit/fileIO/formatprototypemanager.h
+END
+bitvector.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/11-trpr-gr04/!svn/ver/370/src/GraphToolKit/fileIO/bitvector.cpp
+END
+bitvector.h
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/11-trpr-gr04/!svn/ver/370/src/GraphToolKit/fileIO/bitvector.h
+END
+formathandler.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/11-trpr-gr04/!svn/ver/316/src/GraphToolKit/fileIO/formathandler.cpp
+END
+formatprototypemanager.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/11-trpr-gr04/!svn/ver/343/src/GraphToolKit/fileIO/formatprototypemanager.cpp
+END
+formathandler.h
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svn/11-trpr-gr04/!svn/ver/316/src/GraphToolKit/fileIO/formathandler.h
+END
